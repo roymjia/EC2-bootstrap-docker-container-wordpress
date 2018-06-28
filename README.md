@@ -1,4 +1,3 @@
-# EC2-bootstrap-docker-container-wordpress
 CloudFormation Template Docker Container WordPress
 ===============================================
 
