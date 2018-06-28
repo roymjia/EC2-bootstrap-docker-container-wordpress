@@ -1,0 +1,65 @@
+Parameters:
+  InstanceType:
+    Type: String
+    Default: t2.micro
+    Description: EC2 Instance Type
+  SubnetId:
+    Type: String
+    Description: ID of Subnet
+  ImageId:
+    Type: String
+    Default: "ami-b70554c8"
+    Description: Image ID of AMI
+  VpcId:
+    Type: String
+    Description: ID of VPC
+
+Resources:
+  ContainerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: allow traffic to 8000 and ssh
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      VpcId:
+        Ref:
+          VpcId
+              
+  EC2Instance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      ImageId:
+        Ref:
+          ImageId
+      InstanceType:
+        Ref:
+          InstanceType
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: "true"
+          DeviceIndex: "0"
+          GroupSet:
+                - !Ref ContainerSG
+          SubnetId:
+            Ref:
+              SubnetId
+      UserData:
+        Fn::Base64: !Sub |
+           #!/bin/bash
+           yum update -y
+           yum install -y docker
+           sudo service docker start
+           sudo usermod -a -G docker ec2-user
+           yum install -y git
+           curl -L https://github.com/docker/compose/releases/download/1.21.2/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+           sudo chmod +x /usr/local/bin/docker-compose
+           mkdir wordpress
+           cd wordpress
+           sudo curl -O https://raw.githubusercontent.com/roymjia/EC2-bootstrap-docker-container-wordpress/master/docker-compose.yml
+           docker-compose up -d
